@@ -12,11 +12,11 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  static const double _minAutoDownloadMinutes = 15;
-  static const double _defaultAutoDownloadMinutes = 60;
+  static const int _minAutoDownloadEpisodes = 1;
+  static const int _defaultAutoDownloadEpisodes = 3;
   static const double _averageMbPerMinute = 1.6;
 
-  double _autoDownloadMinutes = _defaultAutoDownloadMinutes;
+  int _autoDownloadEpisodes = _defaultAutoDownloadEpisodes;
   bool _autoDownloadFullQueue = false;
 
   @override
@@ -28,19 +28,29 @@ class _ProfileTabState extends State<ProfileTab> {
       0,
       (sum, episode) => sum + episode.duration.inMinutes,
     );
-    final sliderMax = _sliderMax(queueMinutes);
-    final sliderValue = _autoDownloadMinutes.clamp(
-      _minAutoDownloadMinutes,
-      sliderMax,
-    );
     final queueSubtitle = queueEpisodes.isEmpty
         ? 'Queue is empty — add shows to keep downloads flowing.'
         : '${queueEpisodes.length} episodes • $queueMinutes min total';
 
-    final selectedMinutes = _autoDownloadFullQueue
-        ? queueMinutes.toDouble()
-        : sliderValue;
-    final downloadEstimate = _downloadEstimateLabel(minutes: selectedMinutes);
+    final maxSelectableEpisodes = queueEpisodes.isEmpty
+        ? _minAutoDownloadEpisodes
+        : queueEpisodes.length;
+    final sliderValue = queueEpisodes.isEmpty
+        ? _minAutoDownloadEpisodes.toDouble()
+        : _autoDownloadEpisodes
+              .clamp(_minAutoDownloadEpisodes, maxSelectableEpisodes)
+              .toDouble();
+
+    final selectedEpisodes = _autoDownloadFullQueue || queueEpisodes.isEmpty
+        ? queueEpisodes
+        : queueEpisodes.take(sliderValue.round()).toList();
+    final selectedMinutes = selectedEpisodes.fold<int>(
+      0,
+      (sum, episode) => sum + episode.duration.inMinutes,
+    );
+    final downloadEstimate = _downloadEstimateLabel(
+      minutes: selectedMinutes.toDouble(),
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -99,37 +109,50 @@ class _ProfileTabState extends State<ProfileTab> {
                       SwitchListTile.adaptive(
                         value: _autoDownloadFullQueue,
                         contentPadding: EdgeInsets.zero,
-                        onChanged: (value) {
-                          setState(() {
-                            _autoDownloadFullQueue = value;
-                          });
-                        },
+                        onChanged: queueEpisodes.isEmpty
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _autoDownloadFullQueue = value;
+                                });
+                              },
                         title: const Text('Auto-download entire queue'),
                         subtitle: Text(queueSubtitle),
                       ),
                       const SizedBox(height: 12),
                       Opacity(
-                        opacity: _autoDownloadFullQueue ? 0.4 : 1,
+                        opacity: _autoDownloadFullQueue || queueEpisodes.isEmpty
+                            ? 0.4
+                            : 1,
                         child: IgnorePointer(
-                          ignoring: _autoDownloadFullQueue,
+                          ignoring:
+                              _autoDownloadFullQueue || queueEpisodes.isEmpty,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Auto-download next ${sliderValue.round()} minutes',
+                                'Auto-download next ${sliderValue.round()} episodes',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                               Slider(
-                                min: _minAutoDownloadMinutes,
-                                max: sliderMax,
+                                min: _minAutoDownloadEpisodes.toDouble(),
+                                max: maxSelectableEpisodes
+                                    .clamp(_minAutoDownloadEpisodes, 50)
+                                    .toDouble(),
                                 value: sliderValue,
-                                divisions: _sliderDivisions(sliderMax),
-                                label: '${sliderValue.round()} min',
+                                divisions: _sliderDivisions(
+                                  maxSelectableEpisodes.clamp(
+                                    _minAutoDownloadEpisodes,
+                                    50,
+                                  ),
+                                )?.toInt(),
+                                label:
+                                    '${sliderValue.round().clamp(1, maxSelectableEpisodes)} episodes',
                                 onChanged: (value) {
                                   setState(() {
-                                    _autoDownloadMinutes = value;
+                                    _autoDownloadEpisodes = value.round();
                                   });
                                 },
                               ),
@@ -244,27 +267,21 @@ class _ProfileTabState extends State<ProfileTab> {
     ];
   }
 
-  List<Episode> get _queueEpisodes => widget.podcasts
-      .expand((podcast) => podcast.episodes)
-      .where((episode) => !episode.isFinished)
-      .toList();
-
-  double _sliderMax(int queueMinutes) {
-    const fallbackMax = 240.0;
-    final queue = queueMinutes.toDouble();
-    if (queue <= 0) {
-      return fallbackMax;
-    }
-    return queue > fallbackMax ? queue : fallbackMax;
+  List<Episode> get _queueEpisodes {
+    final episodes = widget.podcasts
+        .expand((podcast) => podcast.episodes)
+        .where((episode) => !episode.isFinished)
+        .toList();
+    episodes.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    return episodes;
   }
 
-  int? _sliderDivisions(double sliderMax) {
-    final range = sliderMax - _minAutoDownloadMinutes;
+  int? _sliderDivisions(int maxSelectable) {
+    final range = maxSelectable - _minAutoDownloadEpisodes;
     if (range <= 0) {
       return null;
     }
-    final divisions = (range / 15).round();
-    return divisions > 0 ? divisions : null;
+    return range;
   }
 
   String _downloadEstimateLabel({required double minutes}) {

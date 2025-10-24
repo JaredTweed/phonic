@@ -39,14 +39,23 @@ class SubscriptionsTab extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: ListView.separated(
-              itemCount: podcasts.length,
-              itemBuilder: (context, index) {
-                final podcast = podcasts[index];
-                return SubscriptionTile(podcast: podcast);
-              },
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-            ),
+            child: podcasts.isEmpty
+                ? Center(
+                    child: Text(
+                      'You’re not following any shows yet.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: podcasts.length,
+                    itemBuilder: (context, index) {
+                      final podcast = podcasts[index];
+                      return SubscriptionTile(podcast: podcast);
+                    },
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  ),
           ),
         ],
       ),

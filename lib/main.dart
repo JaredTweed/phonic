@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'screens/home_screen.dart';
+import 'services/podcast_repository.dart';
 
 void main() {
-  runApp(const PhonicApp());
+  runApp(PhonicApp(repository: ItunesPodcastRepository()));
 }
 
 class PhonicApp extends StatelessWidget {
-  const PhonicApp({super.key});
+  const PhonicApp({super.key, required PodcastRepository repository})
+    : _repository = repository;
+
+  final PodcastRepository _repository;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +64,7 @@ class PhonicApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       theme: _buildTheme(lightScheme),
       darkTheme: _buildTheme(darkScheme),
-      home: const HomeScreen(),
+      home: HomeScreen(repository: _repository),
     );
   }
 

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_content.dart';
-import 'profile_tab.dart';
+import '../models/podcast.dart';
+import '../services/podcast_repository.dart';
 import 'episodes_tab.dart';
+import 'profile_tab.dart';
 import 'subscriptions_tab.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, required this.repository});
+
+  final PodcastRepository repository;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -14,12 +17,37 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  _HomeStatus _status = _HomeStatus.loading;
+  List<Podcast> _podcasts = const [];
+  String? _errorMessage;
 
-  late final List<Widget> _tabs = [
-    EpisodesTab(podcasts: podcasts),
-    SubscriptionsTab(podcasts: podcasts),
-    ProfileTab(podcasts: podcasts),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadPodcasts();
+  }
+
+  Future<void> _loadPodcasts() async {
+    setState(() {
+      _status = _HomeStatus.loading;
+      _errorMessage = null;
+    });
+
+    try {
+      final podcasts = await widget.repository.fetchFeaturedPodcasts();
+      if (!mounted) return;
+      setState(() {
+        _podcasts = podcasts;
+        _status = podcasts.isEmpty ? _HomeStatus.empty : _HomeStatus.ready;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _status = _HomeStatus.error;
+        _errorMessage = error.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +57,10 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: theme.colorScheme.surface,
       body: SafeArea(
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeIn,
-          child: _tabs[_selectedIndex],
+          child: _buildBody(),
         ),
       ),
       bottomNavigationBar: NavigationBar(
@@ -55,11 +83,144 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Profile',
           ),
         ],
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onDestinationSelected:
+            _status == _HomeStatus.ready || _status == _HomeStatus.empty
+            ? (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              }
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    switch (_status) {
+      case _HomeStatus.loading:
+        return const Center(child: CircularProgressIndicator());
+      case _HomeStatus.error:
+        return _ErrorView(
+          message:
+              _errorMessage ?? 'We couldn’t refresh your podcasts just now.',
+          onRetry: _loadPodcasts,
+        );
+      case _HomeStatus.empty:
+        return _EmptyView(onRefresh: _loadPodcasts);
+      case _HomeStatus.ready:
+        return _buildTabs();
+    }
+  }
+
+  Widget _buildTabs() {
+    final tabs = [
+      EpisodesTab(
+        key: const PageStorageKey('episodes-tab'),
+        podcasts: _podcasts,
+      ),
+      SubscriptionsTab(
+        key: const PageStorageKey('subscriptions-tab'),
+        podcasts: _podcasts,
+      ),
+      ProfileTab(key: const PageStorageKey('profile-tab'), podcasts: _podcasts),
+    ];
+
+    return IndexedStack(index: _selectedIndex, children: tabs);
+  }
+}
+
+enum _HomeStatus { loading, ready, error, empty }
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.wifi_off_rounded,
+            size: 48,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Connection issue',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Try again'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView({required this.onRefresh});
+
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 48,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No podcasts found',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Try again in a moment. We’ll refresh your queue once new shows are available.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          OutlinedButton.icon(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Refresh'),
+          ),
+        ],
       ),
     );
   }

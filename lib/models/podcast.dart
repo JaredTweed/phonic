@@ -10,6 +10,8 @@ class Podcast {
     required this.category,
     required this.brandColor,
     required this.episodes,
+    this.imageUrl,
+    this.feedUrl,
   });
 
   final String id;
@@ -19,6 +21,8 @@ class Podcast {
   final String category;
   final Color brandColor;
   final List<Episode> episodes;
+  final String? imageUrl;
+  final String? feedUrl;
 
   Episode get latestEpisode => episodes.first;
 }
@@ -31,6 +35,8 @@ class Episode {
     required this.duration,
     required this.publishedAt,
     required this.summary,
+    this.audioUrl,
+    this.imageUrl,
     this.isDownloaded = false,
     this.isFavorite = false,
     this.downloadedAt,
@@ -42,6 +48,8 @@ class Episode {
   final Duration duration;
   final DateTime publishedAt;
   final String summary;
+  final String? audioUrl;
+  final String? imageUrl;
   final bool isDownloaded;
   final bool isFavorite;
   final DateTime? downloadedAt;

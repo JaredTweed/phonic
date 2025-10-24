@@ -30,24 +30,7 @@ class EpisodeListItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 44,
-            width: 44,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: podcast.brandColor.withValues(alpha: 0.16),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              podcast.title.isNotEmpty
-                  ? podcast.title.substring(0, 1).toUpperCase()
-                  : '?',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: podcast.brandColor,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          _ArtworkChip(podcast: podcast),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -148,5 +131,61 @@ class EpisodeListItem extends StatelessWidget {
       return theme.colorScheme.secondary;
     }
     return theme.colorScheme.onSurfaceVariant;
+  }
+}
+
+class _ArtworkChip extends StatelessWidget {
+  const _ArtworkChip({required this.podcast});
+
+  final Podcast podcast;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(14);
+
+    if (podcast.imageUrl != null && podcast.imageUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image.network(
+          podcast.imageUrl!,
+          fit: BoxFit.cover,
+          height: 56,
+          width: 56,
+          errorBuilder: (context, __, ___) =>
+              _FallbackArtwork(podcast: podcast),
+        ),
+      );
+    }
+
+    return _FallbackArtwork(podcast: podcast);
+  }
+}
+
+class _FallbackArtwork extends StatelessWidget {
+  const _FallbackArtwork({required this.podcast});
+
+  final Podcast podcast;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      height: 56,
+      width: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: podcast.brandColor.withValues(alpha: 0.18),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        podcast.title.isNotEmpty
+            ? podcast.title.substring(0, 1).toUpperCase()
+            : '?',
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: podcast.brandColor,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }

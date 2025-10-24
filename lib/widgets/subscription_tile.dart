@@ -23,16 +23,7 @@ class SubscriptionTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: podcast.brandColor.withValues(alpha: 0.16),
-            ),
-            alignment: Alignment.center,
-            child: Icon(Icons.graphic_eq, color: podcast.brandColor),
-          ),
+          _PodcastArtwork(podcast: podcast),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -94,6 +85,53 @@ class SubscriptionTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PodcastArtwork extends StatelessWidget {
+  const _PodcastArtwork({required this.podcast});
+
+  final Podcast podcast;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(14);
+
+    if (podcast.imageUrl != null && podcast.imageUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image.network(
+          podcast.imageUrl!,
+          fit: BoxFit.cover,
+          height: 56,
+          width: 56,
+          errorBuilder: (context, __, ___) =>
+              _FallbackPodcastArtwork(podcast: podcast),
+        ),
+      );
+    }
+
+    return _FallbackPodcastArtwork(podcast: podcast);
+  }
+}
+
+class _FallbackPodcastArtwork extends StatelessWidget {
+  const _FallbackPodcastArtwork({required this.podcast});
+
+  final Podcast podcast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 56,
+      width: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        color: podcast.brandColor.withValues(alpha: 0.18),
+      ),
+      alignment: Alignment.center,
+      child: Icon(Icons.graphic_eq, color: podcast.brandColor),
     );
   }
 }
