@@ -6,9 +6,26 @@ import '../widgets/episode_list_item.dart';
 enum EpisodeFilter { newest, queue, discovery, history, favorites }
 
 class EpisodesTab extends StatefulWidget {
-  const EpisodesTab({super.key, required this.podcasts});
+  const EpisodesTab({
+    super.key,
+    required this.podcasts,
+    required this.isFavorite,
+    required this.isQueued,
+    required this.queueLength,
+    required this.addNext,
+    required this.addLast,
+    required this.removeFromQueue,
+    required this.toggleFavorite,
+  });
 
   final List<Podcast> podcasts;
+  final bool Function(Episode episode) isFavorite;
+  final bool Function(Episode episode) isQueued;
+  final int queueLength;
+  final void Function(Episode episode) addNext;
+  final void Function(Episode episode) addLast;
+  final void Function(Episode episode) removeFromQueue;
+  final void Function(Episode episode) toggleFavorite;
 
   @override
   State<EpisodesTab> createState() => _EpisodesTabState();
@@ -69,6 +86,15 @@ class _EpisodesTabState extends State<EpisodesTab> {
                       return EpisodeListItem(
                         podcast: entry.podcast,
                         episode: entry.episode,
+                        isFavorite: widget.isFavorite(entry.episode),
+                        isQueued: widget.isQueued(entry.episode),
+                        queueLength: widget.queueLength,
+                        onAddNext: () => widget.addNext(entry.episode),
+                        onAddLast: () => widget.addLast(entry.episode),
+                        onRemoveFromQueue: () =>
+                            widget.removeFromQueue(entry.episode),
+                        onToggleFavorite: () =>
+                            widget.toggleFavorite(entry.episode),
                       );
                     },
                     separatorBuilder: (_, __) => const SizedBox(height: 16),

@@ -4,9 +4,26 @@ import '../models/podcast.dart';
 import '../widgets/episode_list_item.dart';
 
 class SubscriptionDetailScreen extends StatelessWidget {
-  const SubscriptionDetailScreen({super.key, required this.podcast});
+  const SubscriptionDetailScreen({
+    super.key,
+    required this.podcast,
+    required this.isFavorite,
+    required this.isQueued,
+    required this.queueLength,
+    required this.addNext,
+    required this.addLast,
+    required this.removeFromQueue,
+    required this.toggleFavorite,
+  });
 
   final Podcast podcast;
+  final bool Function(Episode episode) isFavorite;
+  final bool Function(Episode episode) isQueued;
+  final int queueLength;
+  final void Function(Episode episode) addNext;
+  final void Function(Episode episode) addLast;
+  final void Function(Episode episode) removeFromQueue;
+  final void Function(Episode episode) toggleFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +103,17 @@ class SubscriptionDetailScreen extends StatelessWidget {
             ...episodes.map(
               (episode) => Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: EpisodeListItem(podcast: podcast, episode: episode),
+                child: EpisodeListItem(
+                  podcast: podcast,
+                  episode: episode,
+                  isFavorite: isFavorite(episode),
+                  isQueued: isQueued(episode),
+                  queueLength: queueLength,
+                  onAddNext: () => addNext(episode),
+                  onAddLast: () => addLast(episode),
+                  onRemoveFromQueue: () => removeFromQueue(episode),
+                  onToggleFavorite: () => toggleFavorite(episode),
+                ),
               ),
             ),
         ],

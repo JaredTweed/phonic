@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import '../models/podcast.dart';
 
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key, required this.podcasts});
+  const ProfileTab({
+    super.key,
+    required this.podcasts,
+    required this.queueOrder,
+  });
 
   final List<Podcast> podcasts;
+  final List<String> queueOrder;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -268,12 +273,28 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   List<Episode> get _queueEpisodes {
-    final episodes = widget.podcasts
+    if (widget.queueOrder.isNotEmpty) {
+      final map = <String, Episode>{};
+      for (final podcast in widget.podcasts) {
+        for (final episode in podcast.episodes) {
+          map[episode.id] = episode;
+        }
+      }
+      final ordered = widget.queueOrder
+          .map((id) => map[id])
+          .whereType<Episode>()
+          .toList();
+      if (ordered.isNotEmpty) {
+        return ordered;
+      }
+    }
+
+    final fallback = widget.podcasts
         .expand((podcast) => podcast.episodes)
         .where((episode) => !episode.isFinished)
         .toList();
-    episodes.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-    return episodes;
+    fallback.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    return fallback;
   }
 
   int? _sliderDivisions(int maxSelectable) {

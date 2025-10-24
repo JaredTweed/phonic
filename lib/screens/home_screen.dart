@@ -21,6 +21,8 @@ class _HomeScreenState extends State<HomeScreen> {
   _HomeStatus _status = _HomeStatus.loading;
   List<Podcast> _podcasts = const [];
   String? _errorMessage;
+  final List<String> _queueOrder = [];
+  final Set<String> _favoriteEpisodeIds = {};
 
   @override
   void initState() {
@@ -118,6 +120,13 @@ class _HomeScreenState extends State<HomeScreen> {
       EpisodesTab(
         key: const PageStorageKey('episodes-tab'),
         podcasts: _podcasts,
+        isFavorite: _isFavorite,
+        isQueued: _isQueued,
+        queueLength: _queueOrder.length,
+        addNext: _addEpisodeNext,
+        addLast: _addEpisodeLast,
+        removeFromQueue: _removeFromQueue,
+        toggleFavorite: _toggleFavorite,
       ),
       SubscriptionsTab(
         key: const PageStorageKey('subscriptions-tab'),
@@ -126,10 +135,46 @@ class _HomeScreenState extends State<HomeScreen> {
         onAdd: _addSubscription,
         onSelect: _openSubscription,
       ),
-      ProfileTab(key: const PageStorageKey('profile-tab'), podcasts: _podcasts),
+      ProfileTab(
+        key: const PageStorageKey('profile-tab'),
+        podcasts: _podcasts,
+        queueOrder: _queueOrder,
+      ),
     ];
 
     return IndexedStack(index: _selectedIndex, children: tabs);
+  }
+
+  bool _isFavorite(Episode episode) => _favoriteEpisodeIds.contains(episode.id);
+
+  bool _isQueued(Episode episode) => _queueOrder.contains(episode.id);
+
+  void _addEpisodeNext(Episode episode) {
+    setState(() {
+      _queueOrder.remove(episode.id);
+      _queueOrder.insert(0, episode.id);
+    });
+  }
+
+  void _addEpisodeLast(Episode episode) {
+    setState(() {
+      _queueOrder.remove(episode.id);
+      _queueOrder.add(episode.id);
+    });
+  }
+
+  void _removeFromQueue(Episode episode) {
+    setState(() {
+      _queueOrder.remove(episode.id);
+    });
+  }
+
+  void _toggleFavorite(Episode episode) {
+    setState(() {
+      if (!_favoriteEpisodeIds.add(episode.id)) {
+        _favoriteEpisodeIds.remove(episode.id);
+      }
+    });
   }
 
   void _addSubscription(Podcast podcast) {
@@ -147,7 +192,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openSubscription(Podcast podcast) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SubscriptionDetailScreen(podcast: podcast),
+        builder: (_) => SubscriptionDetailScreen(
+          podcast: podcast,
+          isFavorite: _isFavorite,
+          isQueued: _isQueued,
+          queueLength: _queueOrder.length,
+          addNext: _addEpisodeNext,
+          addLast: _addEpisodeLast,
+          removeFromQueue: _removeFromQueue,
+          toggleFavorite: _toggleFavorite,
+        ),
       ),
     );
   }
