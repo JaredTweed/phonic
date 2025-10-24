@@ -7,6 +7,7 @@ import '../models/podcast.dart';
 
 abstract class PodcastRepository {
   Future<List<Podcast>> fetchFeaturedPodcasts();
+  Future<List<Podcast>> search(String query);
 }
 
 class ItunesPodcastRepository implements PodcastRepository {
@@ -20,14 +21,30 @@ class ItunesPodcastRepository implements PodcastRepository {
 
   @override
   Future<List<Podcast>> fetchFeaturedPodcasts() async {
+    return _searchAcrossTerms(_searchTerms, limitPerTerm: _limitPerTerm);
+  }
+
+  @override
+  Future<List<Podcast>> search(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      return const [];
+    }
+    return _searchAcrossTerms([trimmed], limitPerTerm: 12);
+  }
+
+  Future<List<Podcast>> _searchAcrossTerms(
+    List<String> terms, {
+    int limitPerTerm = 8,
+  }) async {
     final podcasts = <Podcast>[];
     final seen = <String>{};
 
-    for (final term in _searchTerms) {
+    for (final term in terms) {
       final searchUri = Uri.https('itunes.apple.com', '/search', {
         'term': term,
         'media': 'podcast',
-        'limit': '$_limitPerTerm',
+        'limit': '$limitPerTerm',
       });
 
       final searchResponse = await _client.get(searchUri);

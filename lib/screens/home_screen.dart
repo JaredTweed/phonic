@@ -4,6 +4,7 @@ import '../models/podcast.dart';
 import '../services/podcast_repository.dart';
 import 'episodes_tab.dart';
 import 'profile_tab.dart';
+import 'subscription_detail_screen.dart';
 import 'subscriptions_tab.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -121,11 +122,34 @@ class _HomeScreenState extends State<HomeScreen> {
       SubscriptionsTab(
         key: const PageStorageKey('subscriptions-tab'),
         podcasts: _podcasts,
+        repository: widget.repository,
+        onAdd: _addSubscription,
+        onSelect: _openSubscription,
       ),
       ProfileTab(key: const PageStorageKey('profile-tab'), podcasts: _podcasts),
     ];
 
     return IndexedStack(index: _selectedIndex, children: tabs);
+  }
+
+  void _addSubscription(Podcast podcast) {
+    if (_podcasts.any((existing) => existing.id == podcast.id)) {
+      return;
+    }
+    setState(() {
+      _podcasts = [..._podcasts, podcast];
+      if (_status == _HomeStatus.empty && _podcasts.isNotEmpty) {
+        _status = _HomeStatus.ready;
+      }
+    });
+  }
+
+  void _openSubscription(Podcast podcast) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SubscriptionDetailScreen(podcast: podcast),
+      ),
+    );
   }
 }
 

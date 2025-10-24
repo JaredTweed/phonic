@@ -26,7 +26,7 @@ void main() {
 
     await tester.tap(find.text('Subscriptions'));
     await tester.pumpAndSettle();
-    expect(find.text('Add subscription'), findsOneWidget);
+    expect(find.text('Add via search'), findsOneWidget);
 
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
@@ -35,36 +35,46 @@ void main() {
 }
 
 class FakePodcastRepository implements PodcastRepository {
+  final List<Podcast> _podcasts = [
+    Podcast(
+      id: 'pod1',
+      title: 'Test Podcast',
+      host: 'Test Host',
+      description: 'A test podcast used in widget tests.',
+      category: 'Testing',
+      brandColor: Colors.blue,
+      episodes: [
+        Episode(
+          id: 'ep1',
+          title: 'Sample Episode',
+          duration: const Duration(minutes: 32),
+          publishedAt: DateTime.now(),
+          summary: 'A sample episode for testing.',
+        ),
+        Episode(
+          id: 'ep2',
+          title: 'Another Episode',
+          duration: const Duration(minutes: 27),
+          publishedAt: DateTime.now().subtract(const Duration(days: 1)),
+          summary: 'Another sample episode.',
+        ),
+      ],
+      imageUrl: null,
+    ),
+  ];
+
   @override
   Future<List<Podcast>> fetchFeaturedPodcasts() async {
-    final episodes = [
-      Episode(
-        id: 'ep1',
-        title: 'Sample Episode',
-        duration: const Duration(minutes: 32),
-        publishedAt: DateTime.now(),
-        summary: 'A sample episode for testing.',
-      ),
-      Episode(
-        id: 'ep2',
-        title: 'Another Episode',
-        duration: const Duration(minutes: 27),
-        publishedAt: DateTime.now().subtract(const Duration(days: 1)),
-        summary: 'Another sample episode.',
-      ),
-    ];
+    return _podcasts;
+  }
 
-    return [
-      Podcast(
-        id: 'pod1',
-        title: 'Test Podcast',
-        host: 'Test Host',
-        description: 'A test podcast used in widget tests.',
-        category: 'Testing',
-        brandColor: Colors.blue,
-        episodes: episodes,
-        imageUrl: null,
-      ),
-    ];
+  @override
+  Future<List<Podcast>> search(String query) async {
+    return _podcasts
+        .where(
+          (podcast) =>
+              podcast.title.toLowerCase().contains(query.toLowerCase()),
+        )
+        .toList();
   }
 }
