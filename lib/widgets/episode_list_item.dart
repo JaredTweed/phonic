@@ -112,6 +112,9 @@ class EpisodeListItem extends StatelessWidget {
   }
 
   String get _statusLabel {
+    if (episode.isFavorite) {
+      return 'Favorite';
+    }
     if (episode.isFinished) {
       return 'Played';
     }
@@ -122,6 +125,9 @@ class EpisodeListItem extends StatelessWidget {
   }
 
   IconData get _statusIcon {
+    if (episode.isFavorite) {
+      return Icons.star_rounded;
+    }
     if (episode.isFinished) {
       return Icons.check_circle;
     }
@@ -132,6 +138,9 @@ class EpisodeListItem extends StatelessWidget {
   }
 
   Color _statusColor(ThemeData theme) {
+    if (episode.isFavorite) {
+      return theme.colorScheme.primary;
+    }
     if (episode.isFinished) {
       return theme.colorScheme.primary;
     }

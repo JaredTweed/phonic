@@ -2,15 +2,45 @@ import 'package:flutter/material.dart';
 
 import '../models/podcast.dart';
 
-class AnalyticsTab extends StatelessWidget {
-  const AnalyticsTab({super.key, required this.podcasts});
+class ProfileTab extends StatefulWidget {
+  const ProfileTab({super.key, required this.podcasts});
 
   final List<Podcast> podcasts;
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  static const double _minAutoDownloadMinutes = 15;
+  static const double _defaultAutoDownloadMinutes = 60;
+  static const double _averageMbPerMinute = 1.6;
+
+  double _autoDownloadMinutes = _defaultAutoDownloadMinutes;
+  bool _autoDownloadFullQueue = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final stats = _buildStats();
+    final queueEpisodes = _queueEpisodes;
+    final queueMinutes = queueEpisodes.fold<int>(
+      0,
+      (sum, episode) => sum + episode.duration.inMinutes,
+    );
+    final sliderMax = _sliderMax(queueMinutes);
+    final sliderValue = _autoDownloadMinutes.clamp(
+      _minAutoDownloadMinutes,
+      sliderMax,
+    );
+    final queueSubtitle = queueEpisodes.isEmpty
+        ? 'Queue is empty — add shows to keep downloads flowing.'
+        : '${queueEpisodes.length} episodes • $queueMinutes min total';
+
+    final selectedMinutes = _autoDownloadFullQueue
+        ? queueMinutes.toDouble()
+        : sliderValue;
+    final downloadEstimate = _downloadEstimateLabel(minutes: selectedMinutes);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -18,7 +48,7 @@ class AnalyticsTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Analytics',
+            'Profile',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
               letterSpacing: -0.2,
@@ -26,7 +56,7 @@ class AnalyticsTab extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'A focused snapshot of how you listen.',
+            'Fine-tune downloads and see how you listen.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -35,6 +65,97 @@ class AnalyticsTab extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 20,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    color: theme.colorScheme.surfaceContainerLow,
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.35,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Auto-download over Wi-Fi',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Keep a fresh queue ready without touching mobile data.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile.adaptive(
+                        value: _autoDownloadFullQueue,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (value) {
+                          setState(() {
+                            _autoDownloadFullQueue = value;
+                          });
+                        },
+                        title: const Text('Auto-download entire queue'),
+                        subtitle: Text(queueSubtitle),
+                      ),
+                      const SizedBox(height: 12),
+                      Opacity(
+                        opacity: _autoDownloadFullQueue ? 0.4 : 1,
+                        child: IgnorePointer(
+                          ignoring: _autoDownloadFullQueue,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Auto-download next ${sliderValue.round()} minutes',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Slider(
+                                min: _minAutoDownloadMinutes,
+                                max: sliderMax,
+                                value: sliderValue,
+                                divisions: _sliderDivisions(sliderMax),
+                                label: '${sliderValue.round()} min',
+                                onChanged: (value) {
+                                  setState(() {
+                                    _autoDownloadMinutes = value;
+                                  });
+                                },
+                              ),
+                              Text(
+                                'Approx. $downloadEstimate over Wi-Fi.',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_autoDownloadFullQueue) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Approx. $downloadEstimate for the entire queue.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 28),
                 Wrap(
                   spacing: 16,
                   runSpacing: 16,
@@ -47,7 +168,7 @@ class AnalyticsTab extends StatelessWidget {
                   }).toList(),
                 ),
                 const SizedBox(height: 28),
-                _ListeningHighlights(podcasts: podcasts),
+                _ListeningHighlights(podcasts: widget.podcasts),
               ],
             ),
           ),
@@ -57,7 +178,7 @@ class AnalyticsTab extends StatelessWidget {
   }
 
   List<_AnalyticsStat> _buildStats() {
-    final allEpisodes = podcasts
+    final allEpisodes = widget.podcasts
         .expand(
           (podcast) => podcast.episodes.map(
             (episode) =>
@@ -121,6 +242,45 @@ class AnalyticsTab extends StatelessWidget {
         caption: 'Days you pressed play',
       ),
     ];
+  }
+
+  List<Episode> get _queueEpisodes => widget.podcasts
+      .expand((podcast) => podcast.episodes)
+      .where((episode) => !episode.isFinished)
+      .toList();
+
+  double _sliderMax(int queueMinutes) {
+    const fallbackMax = 240.0;
+    final queue = queueMinutes.toDouble();
+    if (queue <= 0) {
+      return fallbackMax;
+    }
+    return queue > fallbackMax ? queue : fallbackMax;
+  }
+
+  int? _sliderDivisions(double sliderMax) {
+    final range = sliderMax - _minAutoDownloadMinutes;
+    if (range <= 0) {
+      return null;
+    }
+    final divisions = (range / 15).round();
+    return divisions > 0 ? divisions : null;
+  }
+
+  String _downloadEstimateLabel({required double minutes}) {
+    if (minutes <= 0) {
+      return '0 MB';
+    }
+    final megabytes = minutes * _averageMbPerMinute;
+    return _formatDataSize(megabytes);
+  }
+
+  String _formatDataSize(double megabytes) {
+    if (megabytes >= 1024) {
+      final gigabytes = megabytes / 1024;
+      return '${gigabytes.toStringAsFixed(gigabytes >= 10 ? 1 : 2)} GB';
+    }
+    return '${megabytes.toStringAsFixed(megabytes >= 10 ? 1 : 2)} MB';
   }
 }
 
@@ -263,7 +423,6 @@ class _AnalyticsStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final maxWidth = MediaQuery.of(context).size.width;
     final targetWidth = maxWidth < 520 ? maxWidth - 40 : 220.0;
     final constrainedWidth = targetWidth.clamp(180.0, 260.0);

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/podcast.dart';
 import '../widgets/episode_list_item.dart';
 
-enum EpisodeFilter { downloads, newest, discovery }
+enum EpisodeFilter { newest, queue, discovery, history, favorites }
 
 class EpisodesTab extends StatefulWidget {
   const EpisodesTab({super.key, required this.podcasts});
@@ -35,27 +35,15 @@ class _EpisodesTabState extends State<EpisodesTab> {
             ),
           ),
           const SizedBox(height: 20),
-          SegmentedButton<EpisodeFilter>(
-            segments: const [
-              ButtonSegment(
-                value: EpisodeFilter.downloads,
-                label: Text('Downloads'),
-              ),
-              ButtonSegment(value: EpisodeFilter.newest, label: Text('New')),
-              ButtonSegment(
-                value: EpisodeFilter.discovery,
-                label: Text('Random order'),
-              ),
-            ],
-            selected: {_filter},
-            showSelectedIcon: false,
-            onSelectionChanged: (selection) {
+          _FilterPicker(
+            selected: _filter,
+            onSelected: (filter) {
               setState(() {
-                _filter = selection.first;
+                _filter = filter;
               });
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Text(
             _descriptionFor(_filter),
             style: theme.textTheme.bodySmall?.copyWith(
@@ -101,23 +89,36 @@ class _EpisodesTabState extends State<EpisodesTab> {
 
   List<_EpisodeEntry> _entriesForFilter(EpisodeFilter filter) {
     switch (filter) {
-      case EpisodeFilter.downloads:
-        final downloads = _allEntries
-            .where((entry) => entry.episode.isDownloaded)
-            .toList();
-        downloads.sort(
-          (a, b) =>
-              _dateForEpisode(b.episode).compareTo(_dateForEpisode(a.episode)),
-        );
-        return downloads;
       case EpisodeFilter.newest:
         final newest = [..._allEntries];
         newest.sort(
           (a, b) => b.episode.publishedAt.compareTo(a.episode.publishedAt),
         );
         return newest;
+      case EpisodeFilter.queue:
+        return _buildDiscoveryOrder()
+            .where((entry) => !entry.episode.isFinished)
+            .toList();
       case EpisodeFilter.discovery:
         return _buildDiscoveryOrder();
+      case EpisodeFilter.history:
+        final history = _allEntries
+            .where((entry) => entry.episode.listenedAt != null)
+            .toList();
+        history.sort(
+          (a, b) => b.episode.listenedAt!.compareTo(a.episode.listenedAt!),
+        );
+        return history;
+      case EpisodeFilter.favorites:
+        final favorites = _allEntries
+            .where((entry) => entry.episode.isFavorite)
+            .toList();
+        favorites.sort((a, b) {
+          final aRef = a.episode.listenedAt ?? a.episode.publishedAt;
+          final bRef = b.episode.listenedAt ?? b.episode.publishedAt;
+          return bRef.compareTo(aRef);
+        });
+        return favorites;
     }
   }
 
@@ -171,17 +172,17 @@ class _EpisodesTabState extends State<EpisodesTab> {
 
   String _descriptionFor(EpisodeFilter filter) {
     switch (filter) {
-      case EpisodeFilter.downloads:
-        return 'Offline episodes ready for any commute.';
       case EpisodeFilter.newest:
         return 'Fresh releases across every show you follow.';
+      case EpisodeFilter.queue:
+        return 'Next up, balanced across every show.';
       case EpisodeFilter.discovery:
         return 'A balanced mix that surfaces unheard episodes first.';
+      case EpisodeFilter.history:
+        return 'Recently played episodes in the order you heard them.';
+      case EpisodeFilter.favorites:
+        return 'Episodes you’ve marked for another listen.';
     }
-  }
-
-  DateTime _dateForEpisode(Episode episode) {
-    return episode.downloadedAt ?? episode.publishedAt;
   }
 }
 
@@ -190,4 +191,54 @@ class _EpisodeEntry {
 
   final Podcast podcast;
   final Episode episode;
+}
+
+class _FilterPicker extends StatelessWidget {
+  const _FilterPicker({required this.selected, required this.onSelected});
+
+  final EpisodeFilter selected;
+  final ValueChanged<EpisodeFilter> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filters = EpisodeFilter.values;
+    final labels = <EpisodeFilter, String>{
+      EpisodeFilter.newest: 'New',
+      EpisodeFilter.queue: 'Queue',
+      EpisodeFilter.discovery: 'Random order',
+      EpisodeFilter.history: 'History',
+      EpisodeFilter.favorites: 'Favorites',
+    };
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: filters.map((filter) {
+          final isSelected = filter == selected;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(labels[filter]!),
+              selected: isSelected,
+              showCheckmark: false,
+              onSelected: (_) => onSelected(filter),
+              selectedColor: theme.colorScheme.primary.withValues(alpha: 0.12),
+              backgroundColor: theme.colorScheme.surfaceContainerLow,
+              labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : null,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurfaceVariant,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 }

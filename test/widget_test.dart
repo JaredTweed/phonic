@@ -15,17 +15,19 @@ void main() {
     await tester.pumpWidget(const PhonicApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Downloads'), findsOneWidget);
     expect(find.text('New'), findsOneWidget);
+    expect(find.text('Queue'), findsOneWidget);
     expect(find.text('Random order'), findsOneWidget);
+    expect(find.text('History'), findsOneWidget);
+    expect(find.text('Favorites'), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
 
     await tester.tap(find.text('Subscriptions'));
     await tester.pumpAndSettle();
     expect(find.text('Add subscription'), findsOneWidget);
 
-    await tester.tap(find.text('Analytics'));
+    await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
-    expect(find.text('Listening time'), findsOneWidget);
+    expect(find.text('Auto-download over Wi-Fi'), findsOneWidget);
   });
 }

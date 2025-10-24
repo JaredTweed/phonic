@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/mock_content.dart';
-import 'analytics_tab.dart';
+import 'profile_tab.dart';
 import 'episodes_tab.dart';
 import 'subscriptions_tab.dart';
 
@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final List<Widget> _tabs = [
     EpisodesTab(podcasts: podcasts),
     SubscriptionsTab(podcasts: podcasts),
-    AnalyticsTab(podcasts: podcasts),
+    ProfileTab(podcasts: podcasts),
   ];
 
   @override
@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
-        height: 68,
+        height: 56,
         selectedIndex: _selectedIndex,
         destinations: const [
           NavigationDestination(
@@ -50,9 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Subscriptions',
           ),
           NavigationDestination(
-            icon: Icon(Icons.auto_graph_outlined),
-            selectedIcon: Icon(Icons.auto_graph_rounded),
-            label: 'Analytics',
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
         onDestinationSelected: (index) {

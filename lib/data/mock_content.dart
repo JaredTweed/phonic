@@ -20,6 +20,7 @@ final List<Podcast> podcasts = [
         summary:
             'Acoustic designer Lola Park on the spaces that shape the way we feel.',
         isDownloaded: true,
+        isFavorite: true,
         downloadedAt: DateTime(2024, 3, 11, 18),
         listenedAt: DateTime(2024, 3, 12, 9, 30),
       ),
@@ -31,6 +32,7 @@ final List<Podcast> podcasts = [
         summary:
             'A sonic meditation on the rituals that guide our first waking hour.',
         isDownloaded: true,
+        isFavorite: true,
         downloadedAt: DateTime(2024, 3, 6, 7),
       ),
       Episode(
@@ -41,6 +43,7 @@ final List<Podcast> podcasts = [
         summary:
             'Mina wanders through early city mornings searching for small silences.',
         listenedAt: DateTime(2024, 2, 27, 20, 12),
+        isFavorite: false,
       ),
     ],
   ),
@@ -61,6 +64,7 @@ final List<Podcast> podcasts = [
         summary:
             'How small teams keep their design systems resilient under pressure.',
         listenedAt: DateTime(2024, 3, 2, 17, 10),
+        isFavorite: true,
       ),
       Episode(
         id: 'fn-ep-18',
@@ -71,6 +75,7 @@ final List<Podcast> podcasts = [
             'Product designer Becca Lee on ambient interactions indoors and out.',
         isDownloaded: true,
         downloadedAt: DateTime(2024, 2, 15, 6, 40),
+        isFavorite: true,
       ),
       Episode(
         id: 'fn-ep-17',
@@ -80,6 +85,7 @@ final List<Podcast> podcasts = [
         summary:
             'Why care rituals matter just as much as well-defined processes.',
         listenedAt: DateTime(2024, 2, 1, 8, 5),
+        isFavorite: false,
       ),
     ],
   ),
@@ -102,6 +108,7 @@ final List<Podcast> podcasts = [
         isDownloaded: true,
         downloadedAt: DateTime(2024, 1, 20, 9),
         listenedAt: DateTime(2024, 1, 20, 21),
+        isFavorite: false,
       ),
       Episode(
         id: 'qh-ep-40',
@@ -110,6 +117,7 @@ final List<Podcast> podcasts = [
         publishedAt: DateTime(2024, 1, 5),
         summary: 'A playlist of cozy, late winter recommendations.',
         listenedAt: DateTime(2024, 1, 8, 19, 15),
+        isFavorite: true,
       ),
       Episode(
         id: 'qh-ep-39',
@@ -118,6 +126,7 @@ final List<Podcast> podcasts = [
         publishedAt: DateTime(2023, 12, 28),
         summary:
             'Blankets of hush, sparrows, and the creak of old radiators in the background.',
+        isFavorite: false,
       ),
     ],
   ),

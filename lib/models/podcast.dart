@@ -32,6 +32,7 @@ class Episode {
     required this.publishedAt,
     required this.summary,
     this.isDownloaded = false,
+    this.isFavorite = false,
     this.downloadedAt,
     this.listenedAt,
   });
@@ -42,6 +43,7 @@ class Episode {
   final DateTime publishedAt;
   final String summary;
   final bool isDownloaded;
+  final bool isFavorite;
   final DateTime? downloadedAt;
   final DateTime? listenedAt;
 
