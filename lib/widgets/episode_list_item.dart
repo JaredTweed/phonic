@@ -37,20 +37,28 @@ class EpisodeListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusLabel = _statusLabel;
     final meta = '${podcast.title} • ${episode.duration.inMinutes} min';
 
     return Material(
       color: Colors.transparent,
       child: GestureDetector(
         onLongPress: _hasActions ? () => _showOptions(context) : null,
-        child: _EpisodeContent(
-          podcast: podcast,
-          episode: episode,
-          statusLabel: statusLabel,
-          meta: meta,
-          statusIcon: _statusIcon,
-          statusColor: _statusColor(theme),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            color: theme.colorScheme.surfaceContainerLow,
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+            ),
+          ),
+          child: _EpisodeContent(
+            podcast: podcast,
+            episode: episode,
+            meta: meta,
+            statusIcon: _statusIcon,
+            statusColor: _statusColor(theme),
+          ),
         ),
       ),
     );
@@ -80,7 +88,6 @@ class EpisodeListItem extends StatelessWidget {
           child: _EpisodeContent(
             podcast: podcast,
             episode: episode,
-            statusLabel: _statusLabel,
             meta: '${podcast.title} • ${episode.duration.inMinutes} min',
             statusIcon: _statusIcon,
             statusColor: _statusColor(Theme.of(context)),
@@ -88,22 +95,6 @@ class EpisodeListItem extends StatelessWidget {
         );
       },
     );
-  }
-
-  String get _statusLabel {
-    if (isFavorite) {
-      return 'Favorite';
-    }
-    if (isQueued) {
-      return 'Queued';
-    }
-    if (episode.isFinished) {
-      return 'Played';
-    }
-    if (episode.isDownloaded) {
-      return 'Downloaded';
-    }
-    return 'Unplayed';
   }
 
   IconData get _statusIcon {
@@ -244,9 +235,23 @@ class _EpisodeOptionsDialog extends StatelessWidget {
             top: originalOffset.dy,
             width: originalSize.width,
             child: Material(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(22),
-              child: child,
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 18,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.35,
+                    ),
+                  ),
+                ),
+                child: child,
+              ),
             ),
           ),
           Align(
@@ -306,7 +311,6 @@ class _EpisodeContent extends StatelessWidget {
   const _EpisodeContent({
     required this.podcast,
     required this.episode,
-    required this.statusLabel,
     required this.meta,
     required this.statusIcon,
     required this.statusColor,
@@ -314,7 +318,6 @@ class _EpisodeContent extends StatelessWidget {
 
   final Podcast podcast;
   final Episode episode;
-  final String statusLabel;
   final String meta;
   final IconData statusIcon;
   final Color statusColor;
@@ -343,40 +346,6 @@ class _EpisodeContent extends StatelessWidget {
                 meta,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (episode.summary.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  episode.summary,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.85,
-                    ),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: theme.colorScheme.surfaceContainerHighest,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      letterSpacing: 0.6,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
                 ),
               ),
             ],

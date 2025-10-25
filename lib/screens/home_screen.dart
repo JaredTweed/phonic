@@ -120,6 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
       EpisodesTab(
         key: const PageStorageKey('episodes-tab'),
         podcasts: _podcasts,
+        queueOrder: _queueOrder,
+        favoriteEpisodeIds: _favoriteEpisodeIds,
         isFavorite: _isFavorite,
         isQueued: _isQueued,
         queueLength: _queueOrder.length,

@@ -9,6 +9,8 @@ class EpisodesTab extends StatefulWidget {
   const EpisodesTab({
     super.key,
     required this.podcasts,
+    required this.queueOrder,
+    required this.favoriteEpisodeIds,
     required this.isFavorite,
     required this.isQueued,
     required this.queueLength,
@@ -19,6 +21,8 @@ class EpisodesTab extends StatefulWidget {
   });
 
   final List<Podcast> podcasts;
+  final List<String> queueOrder;
+  final Set<String> favoriteEpisodeIds;
   final bool Function(Episode episode) isFavorite;
   final bool Function(Episode episode) isQueued;
   final int queueLength;
@@ -113,6 +117,10 @@ class _EpisodesTabState extends State<EpisodesTab> {
       )
       .toList();
 
+  Map<String, _EpisodeEntry> get _entryById => {
+    for (final entry in _allEntries) entry.episode.id: entry,
+  };
+
   List<_EpisodeEntry> _entriesForFilter(EpisodeFilter filter) {
     switch (filter) {
       case EpisodeFilter.newest:
@@ -122,6 +130,13 @@ class _EpisodesTabState extends State<EpisodesTab> {
         );
         return newest;
       case EpisodeFilter.queue:
+        final queueEntries = widget.queueOrder
+            .map((id) => _entryById[id])
+            .whereType<_EpisodeEntry>()
+            .toList();
+        if (queueEntries.isNotEmpty) {
+          return queueEntries;
+        }
         return _buildDiscoveryOrder()
             .where((entry) => !entry.episode.isFinished)
             .toList();
@@ -136,8 +151,9 @@ class _EpisodesTabState extends State<EpisodesTab> {
         );
         return history;
       case EpisodeFilter.favorites:
-        final favorites = _allEntries
-            .where((entry) => entry.episode.isFavorite)
+        final favorites = widget.favoriteEpisodeIds
+            .map((id) => _entryById[id])
+            .whereType<_EpisodeEntry>()
             .toList();
         favorites.sort((a, b) {
           final aRef = a.episode.listenedAt ?? a.episode.publishedAt;
