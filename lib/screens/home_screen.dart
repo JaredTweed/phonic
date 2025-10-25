@@ -134,8 +134,11 @@ class _HomeScreenState extends State<HomeScreen> {
         key: const PageStorageKey('subscriptions-tab'),
         podcasts: _podcasts,
         repository: widget.repository,
+        queueEpisodeIds: _queueOrder.toSet(),
+        favoriteEpisodeIds: _favoriteEpisodeIds,
         onAdd: _addSubscription,
         onSelect: _openSubscription,
+        onRemove: _removeSubscription,
       ),
       ProfileTab(
         key: const PageStorageKey('profile-tab'),
@@ -187,6 +190,18 @@ class _HomeScreenState extends State<HomeScreen> {
       _podcasts = [..._podcasts, podcast];
       if (_status == _HomeStatus.empty && _podcasts.isNotEmpty) {
         _status = _HomeStatus.ready;
+      }
+    });
+  }
+
+  void _removeSubscription(Podcast podcast) {
+    setState(() {
+      _podcasts = _podcasts.where((p) => p.id != podcast.id).toList();
+      final episodeIds = podcast.episodes.map((e) => e.id).toSet();
+      _queueOrder.removeWhere(episodeIds.contains);
+      _favoriteEpisodeIds.removeWhere(episodeIds.contains);
+      if (_podcasts.isEmpty) {
+        _status = _HomeStatus.empty;
       }
     });
   }

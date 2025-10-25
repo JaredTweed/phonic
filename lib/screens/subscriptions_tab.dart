@@ -8,14 +8,20 @@ class SubscriptionsTab extends StatelessWidget {
     super.key,
     required this.podcasts,
     required this.repository,
+    required this.queueEpisodeIds,
+    required this.favoriteEpisodeIds,
     required this.onAdd,
     required this.onSelect,
+    required this.onRemove,
   });
 
   final List<Podcast> podcasts;
   final PodcastRepository repository;
+  final Set<String> queueEpisodeIds;
+  final Set<String> favoriteEpisodeIds;
   final ValueChanged<Podcast> onAdd;
   final ValueChanged<Podcast> onSelect;
+  final ValueChanged<Podcast> onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -73,9 +79,19 @@ class SubscriptionsTab extends StatelessWidget {
                     ),
                     itemBuilder: (context, index) {
                       final podcast = podcasts[index];
+                      final hasQueued = podcast.episodes.any(
+                        (episode) => queueEpisodeIds.contains(episode.id),
+                      );
+                      final hasFavorite = podcast.episodes.any(
+                        (episode) => favoriteEpisodeIds.contains(episode.id),
+                      );
                       return _SubscriptionGridItem(
                         podcast: podcast,
+                        hasQueued: hasQueued,
+                        hasFavorite: hasFavorite,
                         onTap: () => onSelect(podcast),
+                        onLongPress: () =>
+                            _showSubscriptionMenu(context, podcast),
                       );
                     },
                   ),
@@ -114,13 +130,65 @@ class SubscriptionsTab extends StatelessWidget {
       }
     }
   }
+
+  void _showSubscriptionMenu(BuildContext context, Podcast podcast) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                podcast.title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.open_in_new),
+                title: const Text('View details'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onSelect(podcast);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Unsubscribe'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onRemove(podcast);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _SubscriptionGridItem extends StatelessWidget {
-  const _SubscriptionGridItem({required this.podcast, required this.onTap});
+  const _SubscriptionGridItem({
+    required this.podcast,
+    required this.onTap,
+    required this.onLongPress,
+    required this.hasQueued,
+    required this.hasFavorite,
+  });
 
   final Podcast podcast;
   final VoidCallback onTap;
+  final VoidCallback onLongPress;
+  final bool hasQueued;
+  final bool hasFavorite;
 
   @override
   Widget build(BuildContext context) {
@@ -129,14 +197,55 @@ class _SubscriptionGridItem extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(24),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: _SubscriptionImage(
-            imageUrl: podcast.imageUrl,
-            color: podcast.brandColor,
-          ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: _SubscriptionImage(
+                imageUrl: podcast.imageUrl,
+                color: podcast.brandColor,
+              ),
+            ),
+            if (hasQueued || hasFavorite)
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: Row(
+                  children: [
+                    if (hasQueued)
+                      const _BadgeIcon(icon: Icons.queue_music_rounded),
+                    if (hasFavorite)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: _BadgeIcon(icon: Icons.star_rounded),
+                      ),
+                  ],
+                ),
+              ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _BadgeIcon extends StatelessWidget {
+  const _BadgeIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Icon(icon, color: Colors.white, size: 16),
       ),
     );
   }
