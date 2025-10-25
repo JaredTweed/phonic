@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/podcast.dart';
 
@@ -38,6 +39,8 @@ class EpisodeListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final meta = '${podcast.title} • ${episode.duration.inMinutes} min';
+    final dateLabel = DateFormat('MMM d, yyyy').format(episode.publishedAt);
+    final statusIcons = _buildStatusIcons(theme);
 
     return Material(
       color: Colors.transparent,
@@ -56,8 +59,8 @@ class EpisodeListItem extends StatelessWidget {
             podcast: podcast,
             episode: episode,
             meta: meta,
-            statusIcon: _statusIcon,
-            statusColor: _statusColor(theme),
+            dateLabel: dateLabel,
+            statusIcons: statusIcons,
           ),
         ),
       ),
@@ -89,44 +92,38 @@ class EpisodeListItem extends StatelessWidget {
             podcast: podcast,
             episode: episode,
             meta: '${podcast.title} • ${episode.duration.inMinutes} min',
-            statusIcon: _statusIcon,
-            statusColor: _statusColor(Theme.of(context)),
+            dateLabel: DateFormat('MMM d, yyyy').format(episode.publishedAt),
+            statusIcons: _buildStatusIcons(Theme.of(context)),
           ),
         );
       },
     );
   }
 
-  IconData get _statusIcon {
-    if (isFavorite) {
-      return Icons.star_rounded;
-    }
+  List<_StatusIcon> _buildStatusIcons(ThemeData theme) {
+    final icons = <_StatusIcon>[];
     if (isQueued) {
-      return Icons.queue_music_rounded;
+      icons.add(
+        _StatusIcon(
+          icon: Icons.queue_music_rounded,
+          color: theme.colorScheme.secondary,
+        ),
+      );
     }
-    if (episode.isFinished) {
-      return Icons.check_circle;
+    if (isFavorite) {
+      icons.add(
+        _StatusIcon(icon: Icons.star_rounded, color: theme.colorScheme.primary),
+      );
     }
     if (episode.isDownloaded) {
-      return Icons.download_done_rounded;
+      icons.add(
+        _StatusIcon(
+          icon: Icons.download_done_rounded,
+          color: theme.colorScheme.tertiary,
+        ),
+      );
     }
-    return Icons.play_arrow_rounded;
-  }
-
-  Color _statusColor(ThemeData theme) {
-    if (isFavorite) {
-      return theme.colorScheme.primary;
-    }
-    if (isQueued) {
-      return theme.colorScheme.secondary;
-    }
-    if (episode.isFinished) {
-      return theme.colorScheme.primary;
-    }
-    if (episode.isDownloaded) {
-      return theme.colorScheme.secondary;
-    }
-    return theme.colorScheme.onSurfaceVariant;
+    return icons;
   }
 }
 
@@ -312,15 +309,15 @@ class _EpisodeContent extends StatelessWidget {
     required this.podcast,
     required this.episode,
     required this.meta,
-    required this.statusIcon,
-    required this.statusColor,
+    required this.dateLabel,
+    required this.statusIcons,
   });
 
   final Podcast podcast;
   final Episode episode;
   final String meta;
-  final IconData statusIcon;
-  final Color statusColor;
+  final String dateLabel;
+  final List<_StatusIcon> statusIcons;
 
   @override
   Widget build(BuildContext context) {
@@ -348,14 +345,41 @@ class _EpisodeContent extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                dateLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withValues(
+                    alpha: 0.8,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(width: 16),
-        Icon(statusIcon, color: statusColor),
+        if (statusIcons.isNotEmpty)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: statusIcons
+                .map(
+                  (data) => Padding(
+                    padding: const EdgeInsets.only(left: 6),
+                    child: Icon(data.icon, color: data.color, size: 20),
+                  ),
+                )
+                .toList(),
+          ),
       ],
     );
   }
+}
+
+class _StatusIcon {
+  const _StatusIcon({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
 }
 
 class _ArtworkChip extends StatelessWidget {
